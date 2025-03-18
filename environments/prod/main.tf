@@ -17,3 +17,24 @@ terraform {
     }
   }
 }
+
+resource "azurerm_resource_group" "rg" {
+  name     = var.resource_group_name
+  location = var.location
+
+  tags = merge(var.tags, {
+    Environment = "Production"
+  })
+}
+
+module "vnet" {
+  source              = "../../modules/vnet"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  vnet_name           = "${var.prefix}-vnet"
+  address_space       = var.vnet_address_space
+  subnets             = var.subnets
+  tags = merge(var.tags, {
+    Environment = "Production"
+  })
+}
