@@ -13,3 +13,11 @@ subnets = {
     service_endpoints = ["Microsoft.Storage", "Microsoft.Sql"]
   }
 }
+
+tags = {
+  Project    = "OpellaDevOpsChallenge"
+  ManagedBy  = "Terraform"
+  CostCenter = "Engineering"
+}
+
+ssh_public_key_path = ""
