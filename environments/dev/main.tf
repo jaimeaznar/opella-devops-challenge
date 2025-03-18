@@ -100,3 +100,9 @@ resource "azurerm_storage_account" "storage" {
     Environment = "Development"
   })
 }
+
+resource "azurerm_storage_container" "container" {
+  name                  = "data"
+  storage_account_id    = azurerm_storage_account.storage.id
+  container_access_type = "private"
+}
