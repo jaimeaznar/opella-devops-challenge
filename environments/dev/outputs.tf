@@ -30,6 +30,7 @@ output "vm_private_ip" {
   value       = azurerm_linux_virtual_machine.vm.private_ip_address
 }
 
+#storage account outputs
 output "storage_account_name" {
   description = "The name of the storage account"
   value       = azurerm_storage_account.storage.name
