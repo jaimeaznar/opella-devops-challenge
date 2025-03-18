@@ -41,8 +41,37 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Setup Terraform Backend
+      run: |
+        # Define variables
+        RESOURCE_GROUP="terraform-state-rg"
+        STORAGE_ACCOUNT="opellaterraformstate"
+        CONTAINER="tfstate"
+        
+        # Check if resource group exists
+        if ! az group show --name $RESOURCE_GROUP &>/dev/null; then
+          echo "Creating resource group $RESOURCE_GROUP"
+          az group create --name $RESOURCE_GROUP --location eastus
+        fi
+        
+        # Check if storage account exists
+        if ! az storage account show --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP &>/dev/null; then
+          echo "Creating storage account $STORAGE_ACCOUNT"
+          az storage account create --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --sku Standard_LRS --kind StorageV2
+        fi
+        
+        # Check if container exists
+        if ! az storage container show --name $CONTAINER --account-name $STORAGE_ACCOUNT &>/dev/null; then
+          echo "Creating storage container $CONTAINER"
+          az storage container create --name $CONTAINER --account-name $STORAGE_ACCOUNT
+        fi
+        
+        # Get storage access key for terraform init
+        STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --query '[0].value' -o tsv)
+        echo "STORAGE_KEY=$STORAGE_KEY" >> $GITHUB_ENV
+
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -backend-config="access_key=${{ env.STORAGE_KEY }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
