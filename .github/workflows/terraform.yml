@@ -38,15 +38,15 @@ jobs:
         tar -xzf terraform-docs.tar.gz
         chmod +x terraform-docs
         sudo mv terraform-docs /usr/local/bin/
-        
+
         # Generate docs for the main module
         cd ../../modules/vnet
         terraform-docs .
-        
+
         # Generate docs for the environment
         cd ../../environments/${{ github.event.inputs.environment || 'dev' }}
         terraform-docs .
-        
+
         # Commit the updated documentation if this is a push to main/master
         if [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master") ]]; then
           git config --local user.email "action@github.com"
