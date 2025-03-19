@@ -338,10 +338,13 @@ Message: Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
 remote: error: See https://gh.io/lfs for more information.
 remote: error: File environments/dev/.terraform/providers/registry.terraform.io/hashicorp/azurerm/3.117.1/darwin_amd64/terraform-provider-azurerm_v3.117.1_x5 is 264.07 MB; this exceeds GitHub's file size limit of 100.00 MB
 
-### Final working challenge
+## Final working challenge
 
+### Working workflow
 ![Working workflow](img/WORKING_WF.png)
 
+### Created resources
 ![Created resources](img/CREATED.png)
 
+### Destroyed resources
 ![Destroyed resources](img/DESTROYED.png)
