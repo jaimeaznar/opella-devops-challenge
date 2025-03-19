@@ -1,50 +1,72 @@
-# Opella DevOps Technical Challenge: Provision Azure Infrastructure with Terraform
+# Azure Virtual Network Terraform Module
 
-## Objective
+This Terraform module deploys a Virtual Network in Azure with optional subnets, network security groups, and other features.
 
-Showcase your skills in provisioning Azure infrastructure using Terraform, emphasizing reusable, secure, and maintainable Infrastructure as Code (IaC). This challenge will assess your ability to structure code effectively, manage resources across environments, and apply industry-standard practices using Azure, Terraform, and GitHub.
+## Usage
 
-## Deliverables
+```hcl
+module "vnet" {
+  source              = "./modules/vnet"
+  resource_group_name = "example-rg"
+  location            = "eastus"
+  vnet_name           = "example-vnet"
+  address_space       = ["10.0.0.0/16"]
 
-1. Build a reusable Terraform module to deploy an Azure Virtual Network (VNET).
-2. Use this module to create multiple environments in Azure (eg, Develoment and Production), adding a few additional resources of your choice (eg, Blob).
-3. Submit your work via one or many GitHub repositories, make them plublic and share the URL with us.
-   - Please share the terraform plan output. You can use the [Azure Free-tier](https://azure.microsoft.com/en-in/pricing/free-services/).
-4. Make sure your code is clean. Propose tools and processes to help you in this aspect.
+  subnets = {
+    "subnet1" = {
+      address_prefixes = ["10.0.1.0/24"]
+      service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
+    }
+  }
 
-Expect to spend about 2-4 hours on this.
+  tags = {
+    Environment = "Development"
+  }
+}
 
----
-
+<!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-### 1. Reusable Module Creation
+No requirements.
 
-**Task**: Create a Terraform module for provisioning an Azure VNET that can be reused across different setups.
+## Providers
 
-- **Purpose**: This should deploy a VNET and related networking resources, designed with flexibility and security in mind.
-- **Hints**:
-  - Think about what configurations might need to change depending on where or how this is used.
-  - Consider optional features that could enhance network security.
-  - What outputs you would add and why?
-  - What information would someone need in order to use this module? Bonus points if you automate documentation! (indicate how)
-  - Super extra points if your module is tested
+| Name | Version |
+|------|---------|
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.23.0 |
 
-### 2. Infrastructure Setup
+## Modules
 
-**Task**: Create a repository and a GitHub pipeline to deploy multiple environments in Azure using your VNET module, plus a couple of additional resources.
+No modules.
 
-- **Folder Structure**: Set up your code to handle a `dev` environment in one Azure region (e.g., `eastus`), with an eye toward scaling to other environments and regions later.
+## Resources
 
-- **Hints**:
-  - Argument why would you use Resource Groups or Subscriptions for multiple environments.
-  - Include a virtual machine and one other resources (your choice—think about what’s useful in a dev setup).
-  - Name and label resources to make the environment and region clear.
-  - Avoid repeating values—how can you make this flexible?
-  - How might you label resources for better tracking? How would you enforce this?
-  - What outputs might be useful and why?
-  - Bonus points if you build a GitHub pipeline and explain the release lifecycle.
+| Name | Type |
+|------|------|
+| [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
+| [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) | resource |
+| [azurerm_subnet_network_security_group_association.nsg_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
+| [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) | resource |
 
----
+## Inputs
 
-Good luck—we’re excited to see your work!
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_address_space"></a> [address\_space](#input\_address\_space) | The address space for the VNET in CIDR notation | `list(string)` | <pre>[<br/>  "10.0.0.0/16"<br/>]</pre> | no |
+| <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers to use with the VNET | `list(string)` | `[]` | no |
+| <a name="input_location"></a> [location](#input\_location) | Azure region where the VNET will be deployed | `string` | n/a | yes |
+| <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the resource group where the VNET will be created | `string` | n/a | yes |
+| <a name="input_subnets"></a> [subnets](#input\_subnets) | Map of subnet names to configuration | <pre>map(object({<br/>    address_prefixes                          = list(string)<br/>    service_endpoints                         = optional(list(string), [])<br/>    private_endpoint_network_policies_enabled = optional(bool, true)<br/>    delegation                                = optional(map(list(map(string))), {})<br/>  }))</pre> | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Map of tags to assign to the VNET resources | `map(string)` | `{}` | no |
+| <a name="input_vnet_name"></a> [vnet\_name](#input\_vnet\_name) | Name of the Virtual Network | `string` | n/a | yes |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_network_security_group_ids"></a> [network\_security\_group\_ids](#output\_network\_security\_group\_ids) | Map of subnet names to network security group IDs |
+| <a name="output_subnet_ids"></a> [subnet\_ids](#output\_subnet\_ids) | Map of subnet names to subnet IDs |
+| <a name="output_vnet_address_space"></a> [vnet\_address\_space](#output\_vnet\_address\_space) | The address space of the Virtual Network |
+| <a name="output_vnet_id"></a> [vnet\_id](#output\_vnet\_id) | The ID of the Virtual Network |
+| <a name="output_vnet_name"></a> [vnet\_name](#output\_vnet\_name) | The name of the Virtual Network |
+<!-- END_TF_DOCS -->
