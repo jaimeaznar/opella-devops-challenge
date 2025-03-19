@@ -84,14 +84,8 @@ jobs:
     - name: Terraform Validate
       run: terraform validate
     
-    - name: Prepare SSH Key
-      run: |
-        echo "${{ env.SSH_KEY }}" > ssh_key.pub
-        SSH_KEY_FORMATTED=$(cat ssh_key.pub | tr -d '\n\r')
-        echo "SSH_KEY=$SSH_KEY_FORMATTED" >> $GITHUB_ENV
-
     - name: Terraform Plan
-      run: terraform plan -no-color -out=tfplan -var="ssh_public_key_content=${{ env.SSH_KEY }}"
+      run: terraform plan -no-color -out=tfplan -var="ssh_public_key_content=${{ secrets.SSH_PUBLIC_KEY }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
