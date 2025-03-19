@@ -114,3 +114,150 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
    ```bash
    cat ~/.ssh/azure_terraform_key.pub
    ```
+
+### Deploy Infrastructure Locally
+
+1. **Initialize Terraform for the development environment**:
+   ```bash
+   cd environments/dev
+   
+   # Get storage account key for backend
+   STORAGE_KEY=$(az storage account keys list --account-name opellaterraformstate --resource-group terraform-state-rg --query '[0].value' -o tsv)
+   
+   # Initialize with backend access
+   terraform init -backend-config="access_key=$STORAGE_KEY"
+   ```
+
+2. **Modify variables if needed**:
+   Review and update `terraform.tfvars` if you need to customize any variables.
+
+3. **Run a Terraform plan**:
+   ```bash
+   terraform plan -var="ssh_public_key_content=$(cat ~/.ssh/azure_terraform_key.pub)"
+   ```
+
+4. **Apply the Terraform configuration**:
+   ```bash
+   terraform apply -var="ssh_public_key_content=$(cat ~/.ssh/azure_terraform_key.pub)"
+   ```
+
+5. **Destroy resources when done**:
+   ```bash
+   terraform destroy -var="ssh_public_key_content=$(cat ~/.ssh/azure_terraform_key.pub)"
+   ```
+
+## Using GitHub Actions for Deployment
+
+This repository includes GitHub Actions workflows for automated infrastructure deployment and cleanup.
+
+### Setup for GitHub Actions
+
+1. **Fork or push this repository to your GitHub account**
+
+2. **Add repository secrets**:
+   Go to your repository → Settings → Secrets and variables → Actions → New repository secret:
+   
+   - `AZURE_CREDENTIALS`: The entire JSON output from the service principal creation
+   - `ARM_CLIENT_ID`: The client ID from your service principal
+   - `ARM_CLIENT_SECRET`: The client secret from your service principal
+   - `ARM_SUBSCRIPTION_ID`: Your Azure subscription ID
+   - `ARM_TENANT_ID`: Your Azure tenant ID
+   - `SSH_PUBLIC_KEY`: The content of your SSH public key file
+
+3. **Run the deployment workflow**:
+   - Go to the "Actions" tab in your repository
+   - Select and run the "Terraform CI/CD" workflow
+
+4. **Clean up resources when done**:
+   - Go to the "Actions" tab
+   - Select and run the "Terraform Destroy" workflow
+
+
+## VNET Module Documentation
+
+The central component of this project is the reusable VNET module.
+
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+No requirements.
+## Providers
+| Name | Version |
+|------|---------|
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | 4.23.0 |
+## Modules
+| Name |
+|------|
+| vnet |
+## Resources
+| Name | Type |
+|------|------|
+| [azurerm_network_security_group.nsg](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/network_security_group) | resource |
+| [azurerm_subnet.subnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet) | resource |
+| [azurerm_subnet_network_security_group_association.nsg_association](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/subnet_network_security_group_association) | resource |
+| [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/virtual_network) | resource |
+## Inputs
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_address_space"></a> [address\_space](#input\_address\_space) | The address space for the VNET in CIDR notation | `list(string)` | <pre>[<br/>  "10.0.0.0/16"<br/>]</pre> | no |
+| <a name="input_dns_servers"></a> [dns\_servers](#input\_dns\_servers) | List of DNS servers to use with the VNET | `list(string)` | `[]` | no |
+| <a name="input_location"></a> [location](#input\_location) | Azure region where the VNET will be deployed | `string` | n/a | yes |
+| <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Name of the resource group where the VNET will be created | `string` | n/a | yes |
+| <a name="input_subnets"></a> [subnets](#input\_subnets) | Map of subnet names to configuration | <pre>map(object({<br/>    address_prefixes                          = list(string)<br/>    service_endpoints                         = optional(list(string), [])<br/>    private_endpoint_network_policies_enabled = optional(bool, true)<br/>    delegation                                = optional(map(list(map(string))), {})<br/>  }))</pre> | `{}` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | Map of tags to assign to the VNET resources | `map(string)` | `{}` | no |
+| <a name="input_vnet_name"></a> [vnet\_name](#input\_vnet\_name) | Name of the Virtual Network | `string` | n/a | yes |
+## Outputs
+| Name | Description |
+|------|-------------|
+| <a name="output_network_security_group_ids"></a> [network\_security\_group\_ids](#output\_network\_security\_group\_ids) | Map of subnet names to network security group IDs |
+| <a name="output_subnet_ids"></a> [subnet\_ids](#output\_subnet\_ids) | Map of subnet names to subnet IDs |
+| <a name="output_vnet_address_space"></a> [vnet\_address\_space](#output\_vnet\_address\_space) | The address space of the Virtual Network |
+| <a name="output_vnet_id"></a> [vnet\_id](#output\_vnet\_id) | The ID of the Virtual Network |
+| <a name="output_vnet_name"></a> [vnet\_name](#output\_vnet\_name) | The name of the Virtual Network |
+<!-- END_TF_DOCS -->
+
+### Usage Example
+
+```hcl
+module "vnet" {
+  source              = "./modules/vnet"
+  resource_group_name = "example-rg"
+  location            = "eastus"
+  vnet_name           = "example-vnet"
+  address_space       = ["10.0.0.0/16"]
+  
+  subnets = {
+    "subnet1" = {
+      address_prefixes = ["10.0.1.0/24"]
+      service_endpoints = ["Microsoft.Storage", "Microsoft.KeyVault"]
+    }
+    "subnet2" = {
+      address_prefixes = ["10.0.2.0/24"]
+    }
+  }
+  
+  tags = {
+    Environment = "Development"
+    Project     = "Example"
+  }
+}
+```
+
+## Development and Production Environments
+
+This project includes configurations for two environments:
+
+### Development
+
+- VNet with 10.0.0.0/16 address space
+- App and Data subnets
+- Standard_B1s VM (free tier eligible)
+- Standard LRS storage account
+- Private storage container
+
+### Production
+
+- VNet with 10.1.0.0/16 address space
+- App and Data subnets
+- Standard_B1s VM (free tier eligible for demonstration)
+- Standard LRS storage account
+- Private storage container
