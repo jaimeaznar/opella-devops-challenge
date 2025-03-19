@@ -13,7 +13,7 @@ on:
         default: 'dev'
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     name: 'Terraform'
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'dev' }}
-    
+
     defaults:
       run:
         shell: bash
@@ -30,6 +30,32 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+
+    - name: Generate Terraform Documentation
+      run: |
+        # Install terraform-docs
+        curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz
+        tar -xzf terraform-docs.tar.gz
+        chmod +x terraform-docs
+        sudo mv terraform-docs /usr/local/bin/
+        
+        # Generate docs for the main module
+        cd ../../modules/vnet
+        terraform-docs .
+        
+        # Generate docs for the environment
+        cd ../../environments/${{ github.event.inputs.environment || 'dev' }}
+        terraform-docs .
+        
+        # Commit the updated documentation if this is a push to main/master
+        if [[ "${{ github.event_name }}" == "push" && ("${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master") ]]; then
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add ../../modules/vnet/README.md
+          git add README.md
+          git commit -m "Update Terraform documentation" || echo "No changes to commit"
+          git push || echo "No changes to push"
+        fi
 
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
@@ -47,25 +73,25 @@ jobs:
         RESOURCE_GROUP="terraform-state-rg"
         STORAGE_ACCOUNT="opellaterraformstate"
         CONTAINER="tfstate"
-        
+
         # Check if resource group exists
         if ! az group show --name $RESOURCE_GROUP &>/dev/null; then
           echo "Creating resource group $RESOURCE_GROUP"
           az group create --name $RESOURCE_GROUP --location eastus
         fi
-        
+
         # Check if storage account exists
         if ! az storage account show --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP &>/dev/null; then
           echo "Creating storage account $STORAGE_ACCOUNT"
           az storage account create --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --sku Standard_LRS --kind StorageV2
         fi
-        
+
         # Check if container exists
         if ! az storage container show --name $CONTAINER --account-name $STORAGE_ACCOUNT &>/dev/null; then
           echo "Creating storage container $CONTAINER"
           az storage container create --name $CONTAINER --account-name $STORAGE_ACCOUNT
         fi
-        
+
         # Get storage access key for terraform init
         STORAGE_KEY=$(az storage account keys list --account-name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --query '[0].value' -o tsv)
         echo "STORAGE_KEY=$STORAGE_KEY" >> $GITHUB_ENV
@@ -83,7 +109,7 @@ jobs:
 
     - name: Terraform Validate
       run: terraform validate
-    
+
     - name: Terraform Plan
       run: terraform plan -no-color -out=tfplan -var="ssh_public_key_content=${{ secrets.SSH_PUBLIC_KEY }}"
       env:
@@ -91,7 +117,7 @@ jobs:
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
-    
+
     - name: Save Plan Output
       run: terraform show -no-color tfplan > tfplan.txt
 
@@ -104,17 +130,17 @@ jobs:
           const fs = require('fs');
           const planOutput = fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/tfplan.txt', 'utf8');
           const output = `#### Terraform Plan 📝\`${{ github.event.inputs.environment || 'dev' }}\`
-          
+
           <details><summary>Show Plan</summary>
-          
+
           \`\`\`terraform
           ${planOutput}
           \`\`\`
-          
+
           </details>
-          
+
           *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
-          
+
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
