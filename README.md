@@ -25,11 +25,12 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
 │   └── prod/                     # Production environment
 ├── modules/                      # Reusable Terraform modules
 │   └── vnet/                     # Virtual Network module
+│   └── .pre-commit-config.yaml       # Pre-commit hooks configuration
 ├── .gitignore                    # Git ignore file
-├── .pre-commit-config.yaml       # Pre-commit hooks configuration
 ├── .tflint.hcl                   # TFLint configuration
 ├── .terraform-docs.yml           # Terraform docs configuration
 └── README.md                     # Project documentation
+
 ```
 
 ## Prerequisites
@@ -120,10 +121,10 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
 1. **Initialize Terraform for the development environment**:
    ```bash
    cd environments/dev
-   
+
    # Get storage account key for backend
    STORAGE_KEY=$(az storage account keys list --account-name opellaterraformstate --resource-group terraform-state-rg --query '[0].value' -o tsv)
-   
+
    # Initialize with backend access
    terraform init -backend-config="access_key=$STORAGE_KEY"
    ```
@@ -156,7 +157,7 @@ This repository includes GitHub Actions workflows for automated infrastructure d
 
 2. **Add repository secrets**:
    Go to your repository → Settings → Secrets and variables → Actions → New repository secret:
-   
+
    - `AZURE_CREDENTIALS`: The entire JSON output from the service principal creation
    - `ARM_CLIENT_ID`: The client ID from your service principal
    - `ARM_CLIENT_SECRET`: The client secret from your service principal
@@ -224,7 +225,7 @@ module "vnet" {
   location            = "eastus"
   vnet_name           = "example-vnet"
   address_space       = ["10.0.0.0/16"]
-  
+
   subnets = {
     "subnet1" = {
       address_prefixes = ["10.0.1.0/24"]
@@ -234,7 +235,7 @@ module "vnet" {
       address_prefixes = ["10.0.2.0/24"]
     }
   }
-  
+
   tags = {
     Environment = "Development"
     Project     = "Example"
@@ -315,3 +316,35 @@ This project uses terraform-docs to automatically generate and maintain document
 - Documentation is generated from code comments and resource definitions
 - The process is automated via pre-commit hooks and GitHub Actions
 - Documentation stays in sync with the actual code
+
+
+### Some Issues while developing
+
+- (SubscriptionNotFound) Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
+Code: SubscriptionNotFound
+Message: Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
+
+- ssh: Invalid value for "path" parameter: failed to read file: read .: is a directory.
+
+- Unexpected attribute: An attribute named "private_endpoint_network_policies_enabled"
+
+- Deprecated storage_account_name  = azurerm_storage_account.storage.name
+
+- Terraform Init: Error: Failed to get existing workspaces: Error retrieving keys for Storage Account "opellaterraformstate": storage.AccountsClient#ListKeys: Failure responding to request: StatusCode=404 -- Original Error: autorest/azure: Service returned an error. Status=404 Code="ResourceGroupNotFound" Message="Resource group 'terraform-state-rg' could not be found."
+
+- Cannot find user or service principal in graph database for 'xxxx@outlook.com'. If the assignee is an appId, make sure the corresponding service principal is created with 'az ad sp create --id xxxx@outlook.com'
+
+- error: Trace: 3d68c4a8348d3f459d9aac94275925f12e197b4a1726ef91b5fc51c9f4192bb3
+remote: error: See https://gh.io/lfs for more information.
+remote: error: File environments/dev/.terraform/providers/registry.terraform.io/hashicorp/azurerm/3.117.1/darwin_amd64/terraform-provider-azurerm_v3.117.1_x5 is 264.07 MB; this exceeds GitHub's file size limit of 100.00 MB
+
+## Final working challenge
+
+### Working workflow
+![Working workflow](img/WORKING_WF.png)
+
+### Created resources
+![Created resources](img/CREATED.png)
+
+### Destroyed resources
+![Destroyed resources](img/DESTROYED.png)
