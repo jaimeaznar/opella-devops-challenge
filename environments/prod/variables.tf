@@ -38,11 +38,6 @@ variable "tags" {
   default     = {}
 }
 
-variable "ssh_public_key_path" {
-  description = "Path to the SSH public key file"
-  type        = string
-}
-
 variable "ssh_public_key_content" {
   description = "Content of SSH public key (alternative to file path)"
   type        = string

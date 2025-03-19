@@ -19,5 +19,3 @@ tags = {
   ManagedBy  = "Terraform"
   CostCenter = "Engineering"
 }
-
-ssh_public_key_path = ""
