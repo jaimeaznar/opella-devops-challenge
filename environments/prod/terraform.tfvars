@@ -20,4 +20,4 @@ tags = {
   CostCenter = "Engineering"
 }
 
-ssh_public_key_path = "~/.ssh/azure_terraform_key.pub"
+ssh_public_key_path = ""
