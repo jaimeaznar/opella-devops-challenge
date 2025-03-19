@@ -316,3 +316,32 @@ This project uses terraform-docs to automatically generate and maintain document
 - Documentation is generated from code comments and resource definitions
 - The process is automated via pre-commit hooks and GitHub Actions
 - Documentation stays in sync with the actual code
+
+
+### Some Issues while developing
+
+- (SubscriptionNotFound) Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
+Code: SubscriptionNotFound
+Message: Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
+
+- ssh: Invalid value for "path" parameter: failed to read file: read .: is a directory.
+
+- Unexpected attribute: An attribute named "private_endpoint_network_policies_enabled"
+
+- Deprecated storage_account_name  = azurerm_storage_account.storage.name
+
+- Terraform Init: Error: Failed to get existing workspaces: Error retrieving keys for Storage Account "opellaterraformstate": storage.AccountsClient#ListKeys: Failure responding to request: StatusCode=404 -- Original Error: autorest/azure: Service returned an error. Status=404 Code="ResourceGroupNotFound" Message="Resource group 'terraform-state-rg' could not be found."
+
+- Cannot find user or service principal in graph database for 'xxxx@outlook.com'. If the assignee is an appId, make sure the corresponding service principal is created with 'az ad sp create --id xxxx@outlook.com'
+
+- error: Trace: 3d68c4a8348d3f459d9aac94275925f12e197b4a1726ef91b5fc51c9f4192bb3
+remote: error: See https://gh.io/lfs for more information.
+remote: error: File environments/dev/.terraform/providers/registry.terraform.io/hashicorp/azurerm/3.117.1/darwin_amd64/terraform-provider-azurerm_v3.117.1_x5 is 264.07 MB; this exceeds GitHub's file size limit of 100.00 MB
+
+### Final working challenge
+
+![Working workflow](img/WORKING_WF.png)
+
+![Created resources](img/CREATED.png)
+
+![Destroyed resources](img/DESTROYED.png)
