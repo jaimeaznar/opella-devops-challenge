@@ -25,11 +25,12 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
 │   └── prod/                     # Production environment
 ├── modules/                      # Reusable Terraform modules
 │   └── vnet/                     # Virtual Network module
+│   └── .pre-commit-config.yaml       # Pre-commit hooks configuration
 ├── .gitignore                    # Git ignore file
-├── .pre-commit-config.yaml       # Pre-commit hooks configuration
 ├── .tflint.hcl                   # TFLint configuration
 ├── .terraform-docs.yml           # Terraform docs configuration
 └── README.md                     # Project documentation
+
 ```
 
 ## Prerequisites
@@ -120,10 +121,10 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
 1. **Initialize Terraform for the development environment**:
    ```bash
    cd environments/dev
-   
+
    # Get storage account key for backend
    STORAGE_KEY=$(az storage account keys list --account-name opellaterraformstate --resource-group terraform-state-rg --query '[0].value' -o tsv)
-   
+
    # Initialize with backend access
    terraform init -backend-config="access_key=$STORAGE_KEY"
    ```
@@ -156,7 +157,7 @@ This repository includes GitHub Actions workflows for automated infrastructure d
 
 2. **Add repository secrets**:
    Go to your repository → Settings → Secrets and variables → Actions → New repository secret:
-   
+
    - `AZURE_CREDENTIALS`: The entire JSON output from the service principal creation
    - `ARM_CLIENT_ID`: The client ID from your service principal
    - `ARM_CLIENT_SECRET`: The client secret from your service principal
@@ -224,7 +225,7 @@ module "vnet" {
   location            = "eastus"
   vnet_name           = "example-vnet"
   address_space       = ["10.0.0.0/16"]
-  
+
   subnets = {
     "subnet1" = {
       address_prefixes = ["10.0.1.0/24"]
@@ -234,7 +235,7 @@ module "vnet" {
       address_prefixes = ["10.0.2.0/24"]
     }
   }
-  
+
   tags = {
     Environment = "Development"
     Project     = "Example"
