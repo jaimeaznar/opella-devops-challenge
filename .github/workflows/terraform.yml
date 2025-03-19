@@ -93,7 +93,7 @@ jobs:
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
 
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+      if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
       run: terraform apply -auto-approve tfplan -var="ssh_public_key_content=${{ secrets.SSH_PUBLIC_KEY }}"
       env:
         ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
