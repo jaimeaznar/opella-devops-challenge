@@ -91,6 +91,36 @@ jobs:
         ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
         ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
         ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+    
+    - name: Save Plan Output
+      run: terraform show -no-color tfplan > tfplan.txt
+
+    - name: Add Plan to PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const fs = require('fs');
+          const planOutput = fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/tfplan.txt', 'utf8');
+          const output = `#### Terraform Plan 📝\`${{ github.event.inputs.environment || 'dev' }}\`
+          
+          <details><summary>Show Plan</summary>
+          
+          \`\`\`terraform
+          ${planOutput}
+          \`\`\`
+          
+          </details>
+          
+          *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/master' || github.event_name == 'workflow_dispatch'
