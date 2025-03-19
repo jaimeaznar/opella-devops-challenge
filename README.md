@@ -261,3 +261,57 @@ This project includes configurations for two environments:
 - Standard_B1s VM (free tier eligible for demonstration)
 - Standard LRS storage account
 - Private storage container
+
+## Code Quality Tools
+
+This project uses several tools to maintain code quality:
+
+### Pre-commit Hooks
+
+Pre-commit hooks run automatically before each commit to ensure code quality:
+
+```yaml
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: trailing-whitespace
+  - id: end-of-file-fixer
+  - id: check-yaml
+  - id: check-added-large-files
+
+- repo: https://github.com/antonbabenko/pre-commit-terraform
+  rev: v1.77.1
+  hooks:
+  - id: terraform_fmt
+  - id: terraform_docs
+  - id: terraform_validate
+  - id: terraform_tflint
+  - id: terraform_checkov
+    args:
+      - --args=--quiet
+      - --args=--framework=terraform
+```
+
+### TFLint
+
+TFLint provides static analysis of Terraform code, checking for:
+- Deprecated syntax
+- Unused declarations
+- Documentation completeness
+- Naming conventions
+- Provider configurations
+
+### Checkov
+
+Checkov scans infrastructure-as-code for security and compliance issues, helping identify:
+- Insecure configurations
+- Compliance violations
+- Best practice deviations
+
+### Automated Documentation
+
+This project uses terraform-docs to automatically generate and maintain documentation:
+- Documentation is generated from code comments and resource definitions
+- The process is automated via pre-commit hooks and GitHub Actions
+- Documentation stays in sync with the actual code
