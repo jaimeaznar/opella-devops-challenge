@@ -22,3 +22,8 @@ output "network_security_group_ids" {
   description = "Map of subnet names to network security group IDs"
   value       = { for k, v in azurerm_network_security_group.nsg : k => v.id }
 }
+
+output "vnet_tags" {
+  description = "The tags assigned to the Virtual Network"
+  value       = azurerm_virtual_network.vnet.tags
+}
