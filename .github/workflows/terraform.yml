@@ -71,11 +71,11 @@ jobs:
     - name: Install Infracost
       run: |
         curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-        # For demo purposes, we'll use a placeholder key if not available
+        # The API key command has changed from 'auth login --key' to 'configure set api_key'
         if [ -n "${{ secrets.INFRACOST_API_KEY }}" ]; then
-          infracost auth login --key ${{ secrets.INFRACOST_API_KEY }}
+          infracost configure set api_key ${{ secrets.INFRACOST_API_KEY }}
         else
-          # This allows workflow to continue without a real key for demonstration
+          # For demo purposes
           echo "Using demo mode for Infracost (no real estimates)"
           mkdir -p ~/.config/infracost
           echo '{"api_key":"demo-key"}' > ~/.config/infracost/credentials.yml
