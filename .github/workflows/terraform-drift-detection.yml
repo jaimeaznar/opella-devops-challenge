@@ -1,0 +1,104 @@
+name: 'Terraform Drift Detection'
+
+on:
+  schedule:
+    - cron: '0 8 * * 1' # lunes a las 8
+  workflow_dispatch: 
+
+jobs:
+  detect-drift:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.3.0
+
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Backend Storage Key
+        run: |
+          STORAGE_KEY=$(az storage account keys list --account-name opellaterraformstate --resource-group terraform-state-rg --query '[0].value' -o tsv)
+          echo "STORAGE_KEY=$STORAGE_KEY" >> $GITHUB_ENV
+
+      - name: Terraform Init
+        run: terraform init -backend-config="access_key=${{ env.STORAGE_KEY }}"
+        working-directory: environments/${{ matrix.environment }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Terraform Plan (Drift Check)
+        id: plan
+        run: |
+          # The detailed-exitcode option will return:
+          # 0 - No changes
+          # 1 - Error
+          # 2 - Changes present
+          terraform plan -detailed-exitcode -var="ssh_public_key_content=${{ secrets.SSH_PUBLIC_KEY }}" > plan_output.txt 2>&1 || echo "exit_code=$?" >> $GITHUB_OUTPUT
+          
+          # Save the plan output even if the command exits with code 1 or 2
+          cat plan_output.txt
+        working-directory: environments/${{ matrix.environment }}
+        continue-on-error: true
+        env:
+          ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+      - name: Create Issue if Drift Detected
+        if: steps.plan.outputs.exit_code == '2'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            let planOutput = '';
+            
+            try {
+              planOutput = fs.readFileSync('environments/${{ matrix.environment }}/plan_output.txt', 'utf8');
+              // Truncate if too long
+              if (planOutput.length > 65000) {
+                planOutput = planOutput.substring(0, 65000) + '... (truncated)';
+              }
+            } catch (error) {
+              planOutput = 'Error reading plan output: ' + error.message;
+            }
+            
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Infrastructure Drift Detected in ${{ matrix.environment }}`,
+              body: `
+              ## Infrastructure Drift Alert
+              
+              Terraform has detected changes made outside of the IaC process in the ${{ matrix.environment }} environment.
+              
+              <details><summary>Detected changes</summary>
+              
+              \`\`\`
+              ${planOutput}
+              \`\`\`
+              
+              </details>
+              
+              ### Action Required
+              1. Investigate the source of these changes
+              2. Either revert the manual changes or update Terraform configuration
+              3. Run the regular Terraform workflow
+              
+              *This issue was automatically created by the drift detection workflow.*
+              `
+            });
