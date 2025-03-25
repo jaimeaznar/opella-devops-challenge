@@ -2,6 +2,41 @@
 
 This repository contains Terraform code for provisioning Azure infrastructure, following the requirements of the Opella DevOps Technical Challenge. It includes a reusable VNET module and configurations for multiple environments.
 
+# Table of Contents
+
+- [Features](#features)
+- [Repository Structure](#repository-structure)
+- [Prerequisites](#prerequisites)
+- [Getting Started](#getting-started)
+  - [Local Development Setup](#local-development-setup)
+  - [Deploy Infrastructure Locally](#deploy-infrastructure-locally)
+- [Using GitHub Actions for Deployment](#using-github-actions-for-deployment)
+  - [Setup for GitHub Actions](#setup-for-github-actions)
+- [VNET Module Documentation](#vnet-module-documentation)
+  - [Usage Example](#usage-example)
+- [Development and Production Environments](#development-and-production-environments)
+  - [Development](#development)
+  - [Production](#production)
+- [Code Quality Tools](#code-quality-tools)
+  - [Pre-commit Hooks](#pre-commit-hooks)
+  - [TFLint](#tflint)
+  - [Checkov](#checkov)
+  - [Automated Documentation](#automated-documentation)
+- [Testing the VNET Module](#testing-the-vnet-module)
+  - [Prerequisites](#prerequisites-1)
+  - [Authentication Setup](#authentication-setup)
+  - [Running the Tests](#running-the-tests)
+- [Infrastructure Cost Analysis](#infrastructure-cost-analysis)
+  - [Cost Estimation Example](#cost-estimation-example)
+  - [Running Your Own Cost Analysis](#running-your-own-cost-analysis)
+- [Check Evidences](#check-evidences-failures)
+  - [Failures](#check-evidences-failures)
+  - [Success](#check-evidences-success)
+- [Some Issues while Developing](#some-issues-while-developing)
+- [Final Working Challenge](#final-working-challenge)
+
+
+
 ## Features
 
 - **Reusable VNET Module**: Modular design with a Virtual Network module that can be reused across environments
@@ -421,18 +456,6 @@ terraform test
 ![Working workflow](img/INFRA_TEST.png)
 
 
-# Final working challenge
-
-## Working workflow
-![Working workflow](img/WORKING_WF.png)
-
-## Created resources
-![Created resources](img/CREATED.png)
-
-## Destroyed resources
-![Destroyed resources](img/DESTROYED.png)
-
-
 # Infrastructure Cost Analysis
 
 This project uses Infracost to provide cost estimates for the Azure resources deployed by this Terraform module. This helps teams understand the financial impact of infrastructure changes before they're applied.
@@ -476,3 +499,17 @@ To generate cost estimates outside the workflow:
    ```
 
 The CI/CD pipeline also automatically generates cost estimates when changes are proposed through pull requests, helping teams make cost-conscious infrastructure decisions.
+
+
+
+# Final working challenge
+
+## Working workflow
+![Working workflow](img/WORKING_WF.png)
+
+## Created resources
+![Created resources](img/CREATED.png)
+
+## Destroyed resources
+![Destroyed resources](img/DESTROYED.png)
+
