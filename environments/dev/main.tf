@@ -122,9 +122,9 @@ resource "azurerm_log_analytics_workspace" "workspace" {
   name                = "${var.prefix}-log-analytics"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
-  sku                 = "PerGB2018"  
+  sku                 = "PerGB2018"
   retention_in_days   = 30
-  
+
   tags = merge(var.tags, {
     Environment = "Development"
   })
@@ -166,7 +166,6 @@ resource "azurerm_virtual_machine_extension" "vm_monitoring" {
   ]
 }
 
-# Add Azure Monitor Action Group for alerts
 resource "azurerm_monitor_action_group" "critical" {
   name                = "${var.prefix}-critical-alerts"
   resource_group_name = azurerm_resource_group.rg.name
@@ -185,8 +184,8 @@ resource "azurerm_monitor_metric_alert" "vm_cpu" {
   resource_group_name = azurerm_resource_group.rg.name
   scopes              = [azurerm_linux_virtual_machine.vm.id]
   description         = "Alert when CPU exceeds 80% for 5 minutes"
-  severity            = 2  
-  
+  severity            = 2
+
   criteria {
     metric_namespace = "Microsoft.Compute/virtualMachines"
     metric_name      = "Percentage CPU"
@@ -195,13 +194,13 @@ resource "azurerm_monitor_metric_alert" "vm_cpu" {
     threshold        = 80
   }
 
-  window_size        = "PT5M"  
-  frequency          = "PT1M" 
-  
+  window_size = "PT5M"
+  frequency   = "PT1M"
+
   action {
     action_group_id = azurerm_monitor_action_group.critical.id
   }
-  
+
   tags = merge(var.tags, {
     Environment = "Development"
   })
