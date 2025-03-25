@@ -41,9 +41,10 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
 - Git
 - GitHub account (for CI/CD)
 
-## Getting Started
 
-### Local Development Setup
+# Getting Started
+
+## Local Development Setup
 
 1. **Clone this repository**:
    ```bash
@@ -147,11 +148,11 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
    terraform destroy -var="ssh_public_key_content=$(cat ~/.ssh/azure_terraform_key.pub)"
    ```
 
-## Using GitHub Actions for Deployment
+# Using GitHub Actions for Deployment
 
 This repository includes GitHub Actions workflows for automated infrastructure deployment and cleanup.
 
-### Setup for GitHub Actions
+## Setup for GitHub Actions
 
 1. **Fork or push this repository to your GitHub account**
 
@@ -174,7 +175,7 @@ This repository includes GitHub Actions workflows for automated infrastructure d
    - Select and run the "Terraform Destroy" workflow
 
 
-## VNET Module Documentation
+# VNET Module Documentation
 
 The central component of this project is the reusable VNET module.
 
@@ -338,29 +339,95 @@ Message: Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
 remote: error: See https://gh.io/lfs for more information.
 remote: error: File environments/dev/.terraform/providers/registry.terraform.io/hashicorp/azurerm/3.117.1/darwin_amd64/terraform-provider-azurerm_v3.117.1_x5 is 264.07 MB; this exceeds GitHub's file size limit of 100.00 MB
 
-## Final working challenge
 
-### Working workflow
+# Testing the VNET Module
+
+This project includes comprehensive tests for the VNET module using Terraform's native testing framework. This guide explains how to set up your environment and run these tests.
+
+## Prerequisites
+
+- Terraform v1.6.0 or newer
+- Azure subscription
+- Azure CLI installed
+- Proper permissions to create Azure resources (for authentication)
+
+## Authentication Setup
+
+Before running tests, you need to authenticate with Azure:
+
+### Azure CLI Login
+
+```bash
+# Login to Azure CLI
+az login
+
+# Verify you're logged in to the correct subscription
+az account show
+```
+
+### OService Principal Credentials
+
+```bash
+# Export service principal credentials as environment variables
+export ARM_SUBSCRIPTION_ID="your-subscription-id"
+export ARM_CLIENT_ID="your-client-id"
+export ARM_CLIENT_SECRET="your-client-secret"
+export ARM_TENANT_ID="your-tenant-id"
+```
+
+You can verify the environment variables are set correctly:
+
+```bash
+echo $ARM_SUBSCRIPTION_ID
+```
+
+## Running the Tests
+
+1. Navigate to the VNET module directory:
+
+```bash
+cd modules/vnet
+```
+
+2. Initialize Terraform in this directory:
+
+```bash
+terraform init
+```
+
+3. Run the tests:
+
+```bash
+terraform test
+```
+
+### Infra tests (success)
+![Working workflow](img/INFRA_TESTS.png)
+
+
+# Final working challenge
+
+## Working workflow
 ![Working workflow](img/WORKING_WF.png)
 
-### Created resources
+## Created resources
 ![Created resources](img/CREATED.png)
 
-### Destroyed resources
+## Destroyed resources
 ![Destroyed resources](img/DESTROYED.png)
 
-## Check evidences (failures)
+# Check evidences (failures)
 
-### Tflint failure
+## Tflint failure
 ![Created resources](img/check3.png)
 
-### SSH access failure
+## SSH access failure
 ![Created resources](img/check1.png)
 
-### Port80 failure
+## Port80 failure
 ![Created resources](img/check2.png)
 
-## Check evidences (failures)
+# Check evidences (success)
 
-### Checks passed
+## Checks passed
 ![Created resources](img/testpassed.png)
