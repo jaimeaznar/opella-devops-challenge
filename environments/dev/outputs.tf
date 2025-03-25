@@ -40,3 +40,21 @@ output "storage_account_primary_blob_endpoint" {
   description = "The primary blob endpoint URL"
   value       = azurerm_storage_account.storage.primary_blob_endpoint
 }
+
+################
+###Monitoring###
+################
+output "log_analytics_workspace_id" {
+  description = "Log Analytics Workspace's ID"
+  value       = azurerm_log_analytics_workspace.workspace.id
+}
+
+output "log_analytics_workspace_portal_url" {
+  description = "Log Analytics Workspace URL"
+  value       = "https://portal.azure.com/#@/resource${azurerm_log_analytics_workspace.workspace.id}/overview"
+}
+
+output "monitor_action_group_id" {
+  description = "Monitor Action Group's ID"
+  value       = azurerm_monitor_action_group.critical.id
+}
