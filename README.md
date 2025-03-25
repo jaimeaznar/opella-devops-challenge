@@ -34,6 +34,12 @@ This repository contains Terraform code for provisioning Azure infrastructure, f
   - [Success](#check-evidences-success)
 - [Some Issues while Developing](#some-issues-while-developing)
 - [Final Working Challenge](#final-working-challenge)
+- [Monitoring and Alerting](#monitoring-and-alerting)
+  - [Log Analytics Workspace](#log-analytics-workspace)
+  - [Diagnostic Settings](#diagnostic-settings)
+  - [VM Monitoring](#vm-monitoring)
+  - [Alert Rules](#alert-rules)
+  - [Action Groups](#action-groups)
 
 
 
@@ -513,3 +519,51 @@ The CI/CD pipeline also automatically generates cost estimates when changes are 
 ## Destroyed resources
 ![Destroyed resources](img/DESTROYED.png)
 
+
+# Monitoring and Alerting
+
+This project implements Azure monitoring and alerting capabilities to ensure infrastructure health and performance:
+
+## Log Analytics Workspace
+
+A dedicated Log Analytics workspace is provisioned to centralize logs and metrics from all resources:
+- 30-day retention policy
+- Standard "PerGB2018" pricing tier
+- Configured to collect diagnostics from the Virtual Network
+
+## Diagnostic Settings
+
+Azure diagnostic settings are configured to capture detailed metrics:
+- Virtual Network metrics are forwarded to Log Analytics
+- All metrics collection is enabled for comprehensive monitoring
+
+## VM Monitoring
+
+The virtual machines are configured with the Azure Monitor Agent:
+- OmsAgentForLinux extension installed on Linux VMs
+- Automatically sends performance and health metrics to Log Analytics
+
+## Alert Rules
+
+Predefined alert rules help detect potential issues:
+- High CPU utilization alert (triggers when CPU exceeds 80% for 5 minutes)
+- Configured with appropriate severity levels
+- Linked to action groups for notification
+
+## Action Groups
+
+Action groups are configured to notify administrators:
+- Email notifications configured for critical alerts
+- Common alert schema enabled for standardized alert formatting
+
+## Monitoring Dashboard Example
+
+![Alert](img/ALERT1.png)
+![Alert](img/ALERT2.png)
+
+
+This monitoring setup provides:
+- Real-time visibility into resource performance
+- Proactive alerts before issues affect users
+- Historical data for capacity planning and troubleshooting
+- Centralized logging for security and compliance
