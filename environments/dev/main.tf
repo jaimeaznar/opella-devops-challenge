@@ -112,3 +112,96 @@ resource "azurerm_storage_container" "container" {
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
 }
+
+
+################
+###Monitoring###
+################
+
+resource "azurerm_log_analytics_workspace" "workspace" {
+  name                = "${var.prefix}-log-analytics"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  sku                 = "PerGB2018"
+  retention_in_days   = 30
+
+  tags = merge(var.tags, {
+    Environment = "Development"
+  })
+}
+
+resource "azurerm_monitor_diagnostic_setting" "vnet_diagnostics" {
+  name                       = "${var.prefix}-vnet-diagnostics"
+  target_resource_id         = module.vnet.vnet_id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.workspace.id
+
+  metric {
+    category = "AllMetrics"
+    enabled  = true
+  }
+}
+
+resource "azurerm_virtual_machine_extension" "vm_monitoring" {
+  name                       = "MMAExtension"
+  virtual_machine_id         = azurerm_linux_virtual_machine.vm.id
+  publisher                  = "Microsoft.EnterpriseCloud.Monitoring"
+  type                       = "OmsAgentForLinux"
+  type_handler_version       = "1.12"
+  auto_upgrade_minor_version = true
+
+  settings = <<SETTINGS
+    {
+      "workspaceId": "${azurerm_log_analytics_workspace.workspace.workspace_id}"
+    }
+  SETTINGS
+
+  protected_settings = <<PROTECTED_SETTINGS
+    {
+      "workspaceKey": "${azurerm_log_analytics_workspace.workspace.primary_shared_key}"
+    }
+  PROTECTED_SETTINGS
+
+  depends_on = [
+    azurerm_linux_virtual_machine.vm
+  ]
+}
+
+resource "azurerm_monitor_action_group" "critical" {
+  name                = "${var.prefix}-critical-alerts"
+  resource_group_name = azurerm_resource_group.rg.name
+  short_name          = "critical"
+
+  email_receiver {
+    name                    = "admins"
+    email_address           = "admin@example.com"
+    use_common_alert_schema = true
+  }
+}
+
+
+resource "azurerm_monitor_metric_alert" "vm_cpu" {
+  name                = "${var.prefix}-vm-high-cpu"
+  resource_group_name = azurerm_resource_group.rg.name
+  scopes              = [azurerm_linux_virtual_machine.vm.id]
+  description         = "Alert when CPU exceeds 80% for 5 minutes"
+  severity            = 2
+
+  criteria {
+    metric_namespace = "Microsoft.Compute/virtualMachines"
+    metric_name      = "Percentage CPU"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 80
+  }
+
+  window_size = "PT5M"
+  frequency   = "PT1M"
+
+  action {
+    action_group_id = azurerm_monitor_action_group.critical.id
+  }
+
+  tags = merge(var.tags, {
+    Environment = "Development"
+  })
+}

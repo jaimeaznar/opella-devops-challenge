@@ -57,6 +57,43 @@ jobs:
           git push || echo "No changes to push"
         fi
 
+    - name: Install tfsec
+      run: |
+        curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+    - name: Security Scan with tfsec
+      id: tfsec
+      run: |
+        tfsec . --format json > tfsec-results.json || true
+        ISSUES=$(cat tfsec-results.json | jq -r '.results | length')
+        echo "issues_found=$ISSUES" >> $GITHUB_OUTPUT
+
+    - name: Install Infracost
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+        # The API key command has changed from 'auth login --key' to 'configure set api_key'
+        if [ -n "${{ secrets.INFRACOST_API_KEY }}" ]; then
+          infracost configure set api_key ${{ secrets.INFRACOST_API_KEY }}
+        else
+          # For demo purposes
+          echo "Using demo mode for Infracost (no real estimates)"
+          mkdir -p ~/.config/infracost
+          echo '{"api_key":"demo-key"}' > ~/.config/infracost/credentials.yml
+        fi
+
+    - name: Generate Infracost estimate
+      id: infracost
+      run: |
+        # Use --no-color to avoid ANSI color codes in the output 
+        infracost breakdown --path . --format json --out-file infracost-results.json || true
+        # Extract the monthly cost or set to 0 if the command failed
+        if [ -f infracost-results.json ]; then
+          MONTHLY_COST=$(cat infracost-results.json | jq -r '.totalMonthlyCost // "0"')
+          echo "monthly_cost=$MONTHLY_COST" >> $GITHUB_OUTPUT
+        else
+          echo "monthly_cost=0" >> $GITHUB_OUTPUT
+        fi
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
       with:
@@ -121,24 +158,85 @@ jobs:
     - name: Save Plan Output
       run: terraform show -no-color tfplan > tfplan.txt
 
-    - name: Add Plan to PR
+    - name: Add Enhanced Analysis to PR
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const fs = require('fs');
-          const planOutput = fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/tfplan.txt', 'utf8');
-          const output = `#### Terraform Plan 📝\`${{ github.event.inputs.environment || 'dev' }}\`
+          
+          // Format security results
+          let securitySummary = '';
+          try {
+            const securityResults = JSON.parse(fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/tfsec-results.json', 'utf8'));
+            const issueCount = securityResults.results ? securityResults.results.length : 0;
+            securitySummary = `🔒 **Security Scan Results:** ${issueCount} issues found\n\n`;
+            
+            if (issueCount > 0) {
+              securitySummary += '| Severity | Description | File |\n|----------|-------------|------|\n';
+              for (const issue of securityResults.results.slice(0, 5)) { // Show top 5 issues
+                securitySummary += `| ${issue.severity} | ${issue.description} | ${issue.location.filename}:${issue.location.start_line} |\n`;
+              }
+              if (issueCount > 5) {
+                securitySummary += `\n... and ${issueCount - 5} more issues.\n`;
+              }
+            } else {
+              securitySummary += '✅ No security issues found!\n';
+            }
+          } catch (error) {
+            securitySummary = '⚠️ Error generating security report\n';
+            console.log(error);
+          }
+          
+          // Format cost estimate
+          let costSummary = '';
+          try {
+            const costResults = JSON.parse(fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/infracost-results.json', 'utf8'));
+            costSummary = `💰 **Cost Estimate:** $${costResults.totalMonthlyCost || '0'} / month\n\n`;
+            
+            if (costResults.projects && costResults.projects.length > 0 && 
+                costResults.projects[0].breakdown && 
+                costResults.projects[0].breakdown.resources) {
+              costSummary += '| Resource | Monthly Cost |\n|----------|-------------|\n';
+              for (const resource of costResults.projects[0].breakdown.resources.slice(0, 5)) {
+                costSummary += `| ${resource.name} | $${resource.monthlyCost || '0'} |\n`;
+              }
+            } else {
+              costSummary += 'No detailed cost breakdown available.\n';
+            }
+          } catch (error) {
+            costSummary = '⚠️ Error generating cost estimate\n';
+            console.log(error);
+          }
+          
+          // Get the plan output (limit to first 1000 chars to avoid massive comments)
+          let planOutput = '';
+          try {
+            const fullPlanOutput = fs.readFileSync('environments/${{ github.event.inputs.environment || 'dev' }}/tfplan.txt', 'utf8');
+            planOutput = fullPlanOutput.length > 1000 
+              ? fullPlanOutput.substring(0, 1000) + '... (truncated)' 
+              : fullPlanOutput;
+          } catch (error) {
+            planOutput = 'Error reading plan output';
+            console.log(error);
+          }
+          
+          const output = `## Terraform Analysis for \`${{ github.event.inputs.environment || 'dev' }}\`
 
-          <details><summary>Show Plan</summary>
-
+          ### Plan Summary
+          <details><summary>Show Terraform Plan</summary>
+          
           \`\`\`terraform
           ${planOutput}
           \`\`\`
-
+          
           </details>
 
+          ${securitySummary}
+          
+          ${costSummary}
+          
           *Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
 
           github.rest.issues.createComment({
