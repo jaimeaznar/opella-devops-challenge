@@ -402,7 +402,7 @@ terraform test
 ```
 
 ### Infra tests (success)
-![Working workflow](img/INFRA_TESTS.png)
+![Working workflow](img/INFRA_TEST.png)
 
 
 # Final working challenge
