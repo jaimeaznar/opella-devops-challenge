@@ -318,8 +318,24 @@ This project uses terraform-docs to automatically generate and maintain document
 - The process is automated via pre-commit hooks and GitHub Actions
 - Documentation stays in sync with the actual code
 
+# Check evidences (failures)
 
-## Some Issues while developing
+## Tflint failure
+![Created resources](img/check3.png)
+
+## SSH access failure
+![Created resources](img/check1.png)
+
+## Port80 failure
+![Created resources](img/check2.png)
+
+# Check evidences (success)
+
+## Checks passed
+![Created resources](img/testpassed.png)
+
+
+# Some Issues while developing
 
 - (SubscriptionNotFound) Subscription 54f032d3-xxxxx-a0e45e41a38b was not found.
 Code: SubscriptionNotFound
@@ -416,18 +432,3 @@ terraform test
 ## Destroyed resources
 ![Destroyed resources](img/DESTROYED.png)
 
-# Check evidences (failures)
-
-## Tflint failure
-![Created resources](img/check3.png)
-
-## SSH access failure
-![Created resources](img/check1.png)
-
-## Port80 failure
-![Created resources](img/check2.png)
-
-# Check evidences (success)
-
-## Checks passed
-![Created resources](img/testpassed.png)
